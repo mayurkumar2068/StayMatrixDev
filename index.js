@@ -4,15 +4,18 @@ require("dotenv").config();
 const app = express();
 app.use(express.json());
 
-// 🔗 CONNECT ROUTES
+// Routes
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
 
-// TEST
+// Health check (VERY IMPORTANT for Railway)
 app.get("/", (req, res) => {
-  res.send("StayMatrix API running 🚀");
+  res.status(200).send("StayMatrix API running 🚀");
 });
 
-app.listen(process.env.PORT || 4210, () => {
-  console.log(`Server running on http://localhost:${process.env.PORT || 4210}`);
+// 🚨 IMPORTANT: Railway PORT ONLY
+const PORT = process.env.PORT;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });
