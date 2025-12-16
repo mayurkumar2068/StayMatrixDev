@@ -4,14 +4,15 @@ require("dotenv").config();
 const app = express();
 app.use(express.json());
 
+// 🔗 CONNECT ROUTES
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
 
+// TEST
 app.get("/", (req, res) => {
   res.send("StayMatrix API running 🚀");
 });
 
-const PORT = process.env.PORT;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(process.env.PORT || 4210, () => {
+  console.log(`Server running on http://localhost:${process.env.PORT || 4210}`);
 });
