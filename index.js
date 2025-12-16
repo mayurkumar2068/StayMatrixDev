@@ -16,3 +16,9 @@ app.get("/", (req, res) => {
 app.listen(process.env.PORT || 4210, () => {
   console.log(`Server running on http://localhost:${process.env.PORT || 4210}`);
 });
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
+
+// Swagger UI
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+

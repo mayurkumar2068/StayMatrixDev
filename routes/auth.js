@@ -5,16 +5,63 @@ const db = require("../db");
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Authentication APIs
+ */
+
 /* ======================
    REGISTER
 ====================== */
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstname
+ *               - lastname
+ *               - email
+ *               - password
+ *               - mobileno
+ *             properties:
+ *               firstname:
+ *                 type: string
+ *                 example: Mayur
+ *               lastname:
+ *                 type: string
+ *                 example: Bobade
+ *               email:
+ *                 type: string
+ *                 example: mayur@test.com
+ *               password:
+ *                 type: string
+ *                 example: 123456
+ *               mobileno:
+ *                 type: string
+ *                 example: "9988776655"
+ *     responses:
+ *       201:
+ *         description: Registration successful
+ *       409:
+ *         description: Email or mobile already exists
+ */
 router.post("/register", (req, res) => {
   const { firstname, lastname, email, password, mobileno } = req.body;
 
   if (!firstname || !lastname || !email || !password || !mobileno) {
     return res.status(400).json({ message: "All fields are required" });
   }
-console.log("REGISTER BODY:", req.body);
+
   const checkSql =
     "SELECT id FROM users WHERE email = ? OR mobileno = ?";
 
@@ -40,7 +87,7 @@ console.log("REGISTER BODY:", req.body);
 
       db.query(
         insertSql,
-        [firstname, lastname, email, hashed, mobileno], // ✅ FIXED
+        [firstname, lastname, email, hashed, mobileno],
         (err2, insertRes) => {
           if (err2) {
             console.error("Insert error:", err2);
@@ -63,7 +110,7 @@ console.log("REGISTER BODY:", req.body);
               firstname,
               lastname,
               email,
-              mobileno, // ✅ FIXED
+              mobileno,
             },
           });
         }
@@ -78,6 +125,34 @@ console.log("REGISTER BODY:", req.body);
 /* ======================
    LOGIN
 ====================== */
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: mayur@test.com
+ *               password:
+ *                 type: string
+ *                 example: 123456
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
+ */
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -98,38 +173,30 @@ router.post("/login", (req, res) => {
     }
 
     const user = result[0];
-
     const match = await bcrypt.compare(password, user.password_hash);
+
     if (!match) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // 🔐 FULL JWT TOKEN
     const token = jwt.sign(
-      {
-
-        userId: user.id,
-        email: user.email,
-        mobileno: user.mobileno
-      },
+      { userId: user.id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
     );
 
-    // ✅ FULL RESPONSE WITH USER DETAILS
     res.status(200).json({
       message: "Login successful",
-      token, 
+      token,
       user: {
         id: user.id,
         firstname: user.firstname,
         lastname: user.lastname,
         email: user.email,
-        mobileno: user.mobileno || null, // safe fallback
+        mobileno: user.mobileno || null,
       },
     });
   });
 });
 
-/* ✅ EXPORT MUST BE LAST */
 module.exports = router;
