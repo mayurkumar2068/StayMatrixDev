@@ -56,10 +56,16 @@ const router = express.Router();
  *         description: Email or mobile already exists
  */
 router.post("/register", (req, res) => {
-  const { firstname, lastname, email, password, mobileno } = req.body;
+  let { firstname, lastname, email, password, mobileno } = req.body;
 
   if (!firstname || !lastname || !email || !password || !mobileno) {
     return res.status(400).json({ message: "All fields are required" });
+  }
+
+  mobileno = Number(mobileno); // 🔥 FIX
+
+  if (isNaN(mobileno)) {
+    return res.status(400).json({ message: "Invalid mobile number" });
   }
 
   const checkSql =
@@ -68,7 +74,7 @@ router.post("/register", (req, res) => {
   db.query(checkSql, [email, mobileno], async (err, result) => {
     if (err) {
       console.error("Check user error:", err);
-      return res.status(500).json({ message: "Server error" });
+      return res.status(500).json({ message: err.sqlMessage });
     }
 
     if (result.length > 0) {
@@ -81,7 +87,8 @@ router.post("/register", (req, res) => {
       const hashed = await bcrypt.hash(password, 10);
 
       const insertSql = `
-        INSERT INTO users (firstname, lastname, email, password_hash, mobileno)
+        INSERT INTO users 
+        (firstname, lastname, email, password_hash, mobileno)
         VALUES (?, ?, ?, ?, ?)
       `;
 
@@ -91,7 +98,7 @@ router.post("/register", (req, res) => {
         (err2, insertRes) => {
           if (err2) {
             console.error("Insert error:", err2);
-            return res.status(500).json({ message: "Server error" });
+            return res.status(500).json({ message: err2.sqlMessage });
           }
 
           const userId = insertRes.insertId;
@@ -117,10 +124,11 @@ router.post("/register", (req, res) => {
       );
     } catch (e) {
       console.error("Hashing error:", e);
-      return res.status(500).json({ message: "Server error" });
+      return res.status(500).json({ message: e.message });
     }
   });
 });
+
 
 /* ======================
    LOGIN
